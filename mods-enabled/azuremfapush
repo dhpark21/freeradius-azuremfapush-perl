@@ -1,0 +1,18 @@
+perl azure_mfa {
+	filename = ${modconfdir}/perl/azuremfapush.pl
+	perl_flags = "-T"
+	config {
+		#
+		# provide your O365 tenant ID
+		#
+		tenant = "<O365 TenantID>"
+		#
+		# the secret of the Service Principal for Azure MFA StrongAuthenticationService
+		#
+		secret = "<see README how to obtain secret>"
+		#
+		# if the User-Name AVP does not contain a domain name, this will be added
+		#
+		realm = "UPN domain part without the @ sign"
+	}
+}

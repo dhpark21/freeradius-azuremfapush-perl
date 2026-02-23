@@ -1,3 +1,0 @@
-azuremfa.authenticate {
-	azuremfa_perl
-}

@@ -27,11 +27,11 @@ use constant {
 	RLM_MODULE_NUMCODES =>  9,	# How many return codes there are
 };
 
-use vars qw(%RAD_REQUEST %RAD_REPLY %RAD_CHECK);
+use vars qw(%RAD_REQUEST %RAD_REPLY %RAD_CHECK %RAD_PERLCONF);
 
-my $realm = $RAD_REQUEST{'Realm'};
-my $tenant = &radiusd::xlat("%{config:realm[$realm].azuremfa.tenant}");
-my $client_secret = &radiusd::xlat("%{config:realm[$realm].azuremfa.client_secret}");
+my $realm = $RAD_PERLCONF{'realm'};
+my $tenant = $RAD_PERLCONF{'tenant'};
+my $client_secret = $RAD_PERLCONF{'secret'};
 
 my $client_id = "981f26a1-7f43-403b-a875-f8b09b8cd720";
 my $scope = 'https://adnotifications.windowsazure.com/StrongAuthenticationService.svc/Connector/.default';
@@ -59,6 +59,7 @@ sub authenticate {
 	&radiusd::radlog(L_DBG, 'azure_mfa authenticate');
 
 	my $user = $RAD_REQUEST{'User-Name'};
+	if ( $user !~ /.*@.*$/ ){ $user .= "@" . $realm; }
 	my $XML = <<"EOF";
 <BeginTwoWayAuthenticationRequest>
  <Version>1.0</Version>
@@ -100,8 +101,9 @@ EOF
     	return RLM_MODULE_FAIL;
 	}
 
-	$res->{content} =~ m/<AuthenticationResult>(.*)<\/AuthenticationResult>.*<UserPrincipalName>(.*)<\/UserPrincipalName>/i;
-	if ( lc($1) eq "true" && lc($user) eq lc($2) ) {
+	$res->{content} =~ m/<AuthenticationResult>(.*)<\/AuthenticationResult>/i;
+
+	if ( lc($1) eq "true" ) {
 			return RLM_MODULE_OK;
 	}else{
 		return RLM_MODULE_REJECT;
